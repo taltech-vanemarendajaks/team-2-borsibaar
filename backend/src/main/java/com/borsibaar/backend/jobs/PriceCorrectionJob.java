@@ -43,7 +43,7 @@ public class PriceCorrectionJob {
                     .orElseGet(() -> {
                         Inventory newInv = new Inventory();
                         newInv.setOrganizationId(product.getOrganizationId());
-                        newInv.setProductId(product.getId());
+                        newInv.setProduct(product);
                         newInv.setQuantity(BigDecimal.ZERO);
                         newInv.setAdjustedPrice(product.getBasePrice());
                         newInv.setCreatedAt(OffsetDateTime.now());

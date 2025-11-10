@@ -52,9 +52,9 @@ public class Inventory {
     private Set<InventoryTransaction> transactions = new HashSet<>();
 
     // Custom constructor for easy creation
-    public Inventory(Long organizationId, Long productId, BigDecimal quantity, BigDecimal adjustedPrice) {
+    public Inventory(Long organizationId, Product product, BigDecimal quantity, BigDecimal adjustedPrice) {
         this.organizationId = organizationId;
-        this.productId = productId;
+        this.product = product;
         this.quantity = quantity;
         this.adjustedPrice = adjustedPrice;
         this.createdAt = OffsetDateTime.now();
