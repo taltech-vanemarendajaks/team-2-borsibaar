@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
+const backendUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const response = await fetch(`${backendUrl}/api/bar-stations/${params.id}`, {
-      headers: {
-        Cookie: request.headers.get("cookie") || "",
-      },
-      cache: "no-store",
-    });
+    const response = await fetch(
+      `${backendUrl}/api/bar-stations/${params.id}`,
+      {
+        headers: {
+          Cookie: request.headers.get("cookie") || "",
+        },
+        cache: "no-store",
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -40,15 +44,18 @@ export async function PUT(
   try {
     const body = await request.json();
 
-    const response = await fetch(`${backendUrl}/api/bar-stations/${params.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: request.headers.get("cookie") || "",
-      },
-      body: JSON.stringify(body),
-      cache: "no-store",
-    });
+    const response = await fetch(
+      `${backendUrl}/api/bar-stations/${params.id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: request.headers.get("cookie") || "",
+        },
+        body: JSON.stringify(body),
+        cache: "no-store",
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -74,13 +81,16 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const response = await fetch(`${backendUrl}/api/bar-stations/${params.id}`, {
-      method: "DELETE",
-      headers: {
-        Cookie: request.headers.get("cookie") || "",
-      },
-      cache: "no-store",
-    });
+    const response = await fetch(
+      `${backendUrl}/api/bar-stations/${params.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Cookie: request.headers.get("cookie") || "",
+        },
+        cache: "no-store",
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -100,4 +110,3 @@ export async function DELETE(
     );
   }
 }
-

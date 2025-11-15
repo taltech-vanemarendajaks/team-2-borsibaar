@@ -41,11 +41,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        // Skip JWT authentication for OAuth2 and auth endpoints
+        // Skip JWT authentication for OAuth2 and auth login endpoints
+        // But allow JWT authentication for /auth/logout
         String requestPath = request.getRequestURI();
         if (requestPath.startsWith("/oauth2/") ||
                 requestPath.startsWith("/login/oauth2/") ||
-                requestPath.startsWith("/auth/")) {
+                (requestPath.startsWith("/auth/") && !requestPath.equals("/auth/logout"))) {
             filterChain.doFilter(request, response);
             return;
         }

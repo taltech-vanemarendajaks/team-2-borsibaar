@@ -1,6 +1,9 @@
+"use client";
+
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -9,7 +12,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-import { ChartLine, Home, Package, ShoppingCart } from "lucide-react";
+import { ChartLine, Home, LogOut, Package, ShoppingCart } from "lucide-react";
 
 // Menu items.
 const items = [
@@ -36,6 +39,15 @@ const items = [
 ];
 
 export function AppSidebar() {
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", { method: "POST" });
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   return (
     <Sidebar variant="floating" collapsible="icon">
       <SidebarContent>
@@ -57,6 +69,16 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" onClick={handleLogout}>
+              <LogOut className="!w-5 !h-5" />
+              <span className="text-lg font-medium">Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
