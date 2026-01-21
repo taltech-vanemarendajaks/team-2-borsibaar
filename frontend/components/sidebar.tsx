@@ -69,6 +69,7 @@ function SidebarFooterContent() {
     try {
       await fetch("/api/logout", { method: "POST" });
       window.location.href = "/login";
+      console.log("Logged out successfully");
     } catch (error) {
       console.error("Logout failed:", error);
     }
