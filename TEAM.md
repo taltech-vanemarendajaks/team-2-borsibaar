@@ -1,18 +1,13 @@
-Team-2
+# Team-2
 
-Members:
+## Members:
 
-Kristjan - crycx
+* Kristjan - crycx
+* Kerly - kyrander
+* Raido - Raidoxd1
+* Ragnar - decores86
+* Katharina - KatharinaMat
 
-Kerly - kyrander
-
-Raido - Raidoxd1
-
-Ragnar - decores86
-
-Katharina - KatharinaMat
-
-
-Description of team workflow:
+## Description of team workflow:
 
 puudulik
