@@ -11,3 +11,8 @@
 ## Description of team workflow:
 
 puudulik
+
+## commit 1 midagi mõistlikku
+
+
+## commit 2 
