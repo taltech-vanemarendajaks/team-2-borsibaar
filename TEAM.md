@@ -10,9 +10,9 @@
 
 ## Description of team workflow:
 
-puudulik
+### Merge strateegiad
+Kasutasime tavalist merge-t ja squash and merge.
+Valisime need sest rebase ei saanud ühe pull requesti puhul teha (võis olla tingitud merge conflictist)
 
-## commit 1 midagi mõistlikku
-
-
-## commit 2 
+###
+Rebase ei saanud ühe pull requesti puhul teha, päris põhjust ei tea. Arvame, et oli seotud merge conflictiga.
