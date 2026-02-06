@@ -69,12 +69,9 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          scp -C -o StrictHostKeyChecking=no \
+          scp -4 -C -o StrictHostKeyChecking=no \
             -o Compression=yes \
             -o Ciphers=chacha20-poly1305@openssh.com \
-            -o ControlMaster=auto \
-            -o ControlPersist=60s \
-            -o ControlPath=~/.ssh/cm-%r@%h:%p \
             "$TGZ" \
             "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_UPLOAD_DIR }}/"
 
