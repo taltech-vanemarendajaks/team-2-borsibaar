@@ -49,14 +49,18 @@ jobs:
             postgres:17
           ls -lh "$TAR"
 
-      - name: Upload tar to server via scp
-        uses: appleboy/scp-action@v0.1.7
+      # Avoid appleboy/scp-action tar wrapping; use plain scp instead
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "${{ env.BUNDLE_PREFIX }}_${{ steps.tag.outputs.tag }}.tar"
-          target: "${{ secrets.DEPLOY_UPLOAD_DIR }}"
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Upload tar to server with scp
+        run: |
+          TAR="${{ env.BUNDLE_PREFIX }}_${{ steps.tag.outputs.tag }}.tar"
+          scp -o StrictHostKeyChecking=no \
+            "$TAR" \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_UPLOAD_DIR }}/"
 
       - name: Load + switch tag + restart via SSH
         uses: appleboy/ssh-action@v1.2.0
