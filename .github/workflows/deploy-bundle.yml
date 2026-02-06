@@ -1,0 +1,107 @@
+name: deploy-borsibaar-bundle
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      BACKEND_IMAGE: borsibaar-backend
+      FRONTEND_IMAGE: borsibaar-frontend
+      BUNDLE_PREFIX: borsibaar_images
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute tag (Europe/Tallinn datetime)
+        id: tag
+        run: |
+          TAG="$(TZ=Europe/Tallinn date +%F_%H-%M-%S)"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Using tag: $TAG"
+
+      - name: Build backend
+        run: |
+          docker build -t $BACKEND_IMAGE:latest ./backend
+          docker tag $BACKEND_IMAGE:latest $BACKEND_IMAGE:${{ steps.tag.outputs.tag }}
+
+      - name: Build frontend
+        run: |
+          docker build -t $FRONTEND_IMAGE:latest ./frontend
+          docker tag $FRONTEND_IMAGE:latest $FRONTEND_IMAGE:${{ steps.tag.outputs.tag }}
+
+      - name: Pull 3rd party images for bundle
+        run: |
+          docker pull nginx:alpine
+          docker pull postgres:17
+
+      - name: Save bundle tar (multi-image)
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          TAR="${{ env.BUNDLE_PREFIX }}_${TAG}.tar"
+          docker save -o "$TAR" \
+            $BACKEND_IMAGE:${TAG} \
+            $FRONTEND_IMAGE:${TAG} \
+            nginx:alpine \
+            postgres:17
+          ls -lh "$TAR"
+
+      - name: Upload tar to server via scp
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "${{ env.BUNDLE_PREFIX }}_${{ steps.tag.outputs.tag }}.tar"
+          target: "${{ secrets.DEPLOY_UPLOAD_DIR }}"
+
+      - name: Load + switch tag + restart via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+
+            TAG="${{ steps.tag.outputs.tag }}"
+            COMPOSE_DIR="${{ secrets.DEPLOY_COMPOSE_DIR }}"
+            UPLOAD_DIR="${{ secrets.DEPLOY_UPLOAD_DIR }}"
+            TAR="${UPLOAD_DIR}/${{ env.BUNDLE_PREFIX }}_${TAG}.tar"
+
+            echo "Loading bundle: $TAR"
+            docker load -i "$TAR"
+
+            # Sanity check: required images exist
+            docker image inspect borsibaar-backend:${TAG} >/dev/null
+            docker image inspect borsibaar-frontend:${TAG} >/dev/null
+
+            cd "$COMPOSE_DIR"
+
+            # Backup previous tag for easy rollback
+            if [ -f .env ]; then
+              cp .env .env.bak
+            fi
+
+            # Set IMAGE_TAG for docker-compose.yaml
+            if [ -f .env ]; then
+              if grep -q '^IMAGE_TAG=' .env; then
+                sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${TAG}/" .env
+              else
+                echo "IMAGE_TAG=${TAG}" >> .env
+              fi
+            else
+              echo "IMAGE_TAG=${TAG}" > .env
+            fi
+
+            docker compose up -d
+            echo "Active tag: $(grep '^IMAGE_TAG=' .env)"
+
+            # Cleanup: keep only newest 1 bundle tar
+            cd "$UPLOAD_DIR"
+            ls -1t borsibaar_images_*.tar 2>/dev/null | tail -n +2 | xargs -r rm -f
+            echo "Remaining bundles:"
+            ls -1 borsibaar_images_*.tar 2>/dev/null || true
