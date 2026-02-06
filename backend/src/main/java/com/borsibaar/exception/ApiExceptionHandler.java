@@ -10,12 +10,18 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+        private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
         private ProblemDetail buildProblemDetail(HttpStatus status,
                         String title,
@@ -127,13 +133,30 @@ public class ApiExceptionHandler {
                 return problemDetail;
         }
 
+        @ExceptionHandler(NoResourceFoundException.class)
+        public ProblemDetail handleNoResourceFound(NoResourceFoundException exception,
+                        HttpServletRequest request) {
+                return buildProblemDetail(
+                                HttpStatus.NOT_FOUND,
+                                "Not Found",
+                                exception.getMessage(),
+                                request.getRequestURI());
+        }
+
         @ExceptionHandler(Exception.class)
         public ProblemDetail handleOther(Exception exception,
                         HttpServletRequest request) {
-                return buildProblemDetail(
+                log.error("Unhandled exception for {}", request.getRequestURI(), exception);
+                ProblemDetail problemDetail = buildProblemDetail(
                                 HttpStatus.INTERNAL_SERVER_ERROR,
                                 "Server error",
                                 "Unexpected error occurred.",
                                 request.getRequestURI());
+
+                problemDetail.setProperty("error", exception.getClass().getSimpleName());
+                if (exception.getMessage() != null && !exception.getMessage().isBlank()) {
+                        problemDetail.setProperty("message", exception.getMessage());
+                }
+                return problemDetail;
         }
 }
