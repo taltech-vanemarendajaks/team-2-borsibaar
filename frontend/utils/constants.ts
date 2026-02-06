@@ -14,3 +14,7 @@
  * Note: Browser API calls go through Next.js proxy, not directly to backend
  */
 export const backendUrl = process.env.BACKEND_URL ?? "http://localhost:8080";
+
+// Client-safe backend URL (exposed by Next.js). Used for browser-initiated flows like OAuth.
+export const publicBackendUrl =
+	process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";

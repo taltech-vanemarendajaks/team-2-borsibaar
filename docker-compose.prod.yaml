@@ -16,6 +16,7 @@ services:
       - borsibaar-network
 
   backend:
+    image: borsibaar-backend:${IMAGE_TAG:-latest}
     build:
       context: backend
       dockerfile: Dockerfile
@@ -25,6 +26,7 @@ services:
     env_file:
       - .env
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       # Production URLs for CORS and OAuth redirects (now through nginx)
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
@@ -36,6 +38,7 @@ services:
       - borsibaar-network
 
   frontend:
+    image: borsibaar-frontend:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: frontend/Dockerfile

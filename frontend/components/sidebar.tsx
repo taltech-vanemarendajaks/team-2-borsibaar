@@ -67,17 +67,26 @@ function SidebarFooterContent() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/logout", { method: "POST" });
-      window.location.href = "/login";
+      await fetch("/api/backend/logout", {
+        method: "POST",
+        credentials: "include",
+      });
     } catch (error) {
       console.error("Logout failed:", error);
+    } finally {
+      window.location.href = "/login";
     }
   };
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton size="lg" onClick={handleLogout} tooltip="Logout">
+        <SidebarMenuButton
+          size="lg"
+          type="button"
+          onClick={handleLogout}
+          tooltip="Logout"
+        >
           <LogOut className="!w-6 !h-6" />
           {!isCollapsed && <span className="text-lg font-medium">Logout</span>}
         </SidebarMenuButton>

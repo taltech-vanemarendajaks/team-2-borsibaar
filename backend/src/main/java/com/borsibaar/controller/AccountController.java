@@ -2,10 +2,12 @@ package com.borsibaar.controller;
 
 import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
+import com.borsibaar.repository.OrganizationRepository;
 import com.borsibaar.repository.RoleRepository;
 import com.borsibaar.repository.UserRepository;
 import com.borsibaar.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class AccountController {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final OrganizationRepository organizationRepository;
 
     public record MeResponse(String email, String name, String role, Long organizationId, boolean needsOnboarding) {
     }
@@ -55,11 +58,17 @@ public class AccountController {
             if (req.organizationId() == null || !req.acceptTerms())
                 return ResponseEntity.badRequest().build();
 
+            if (!organizationRepository.existsById(req.organizationId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Organization not found");
+            }
+
             // Allow users without organization (that's the point of onboarding)
             User user = SecurityUtils.getCurrentUser(false);
 
             Role adminRole = roleRepository.findByName("ADMIN")
-                    .orElseThrow(() -> new IllegalArgumentException("Admin role ADMIN not found"));
+                    .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Required role ADMIN not found in database"));
 
             // Set org and role if needed (idempotent: do nothing if already set)
             if (user.getOrganizationId() == null) {
@@ -68,7 +77,8 @@ public class AccountController {
                     user.setRole(adminRole);
                 }
                 user.setOrganizationId(req.organizationId());
-                userRepository.save(user);
+                // Force DB constraint checks inside this try/catch (transaction commit would otherwise throw outside).
+                userRepository.saveAndFlush(user);
             }
 
             // If later you add orgId to JWT, re-issue token here.

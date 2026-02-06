@@ -25,7 +25,7 @@ public class AuthController {
     }
 
     @GetMapping("/login/success")
-    public void success(HttpServletResponse response, OAuth2AuthenticationToken auth) throws IOException {
+    public void success(HttpServletRequest request, HttpServletResponse response, OAuth2AuthenticationToken auth) throws IOException {
         var result = authService.processOAuthLogin(auth);
 
         Cookie cookie = new Cookie("jwt", result.dto().token());
@@ -35,8 +35,32 @@ public class AuthController {
         cookie.setMaxAge(24 * 60 * 60); // 1 day
         response.addCookie(cookie);
 
-        String redirect = result.needsOnboarding() ? "/onboarding" : "/dashboard";
-        response.sendRedirect(frontendUrl + redirect);
+        String redirectPath = result.needsOnboarding() ? "/onboarding" : "/dashboard";
+
+        String requestHost = request.getHeader("X-Forwarded-Host");
+        if (requestHost == null || requestHost.isBlank()) {
+            requestHost = request.getHeader("Host");
+        }
+        if (requestHost == null) {
+            requestHost = "";
+        }
+
+        // Prefer configured frontendUrl (useful for local dev where frontend is on a different port).
+        // But if it's clearly misconfigured (e.g. localhost in production), fall back to a relative redirect.
+        boolean frontendUrlLooksWrongForRequest =
+                frontendUrl != null
+                        && !frontendUrl.isBlank()
+                        && frontendUrl.contains("localhost")
+                        && !requestHost.contains("localhost")
+                        && !requestHost.isBlank();
+
+        if (frontendUrl == null || frontendUrl.isBlank() || frontendUrlLooksWrongForRequest) {
+            response.sendRedirect(redirectPath);
+            return;
+        }
+
+        String base = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
+        response.sendRedirect(base + redirectPath);
     }
 
     @PostMapping("/logout")

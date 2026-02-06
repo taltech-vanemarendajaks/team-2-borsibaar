@@ -989,3 +989,109 @@ databaseChangeLog:
         - dropColumn:
             columnName: price_decrease_step
             tableName: organizations
+
+  - changeSet:
+      id: 015-seed-default-organization-inventory
+      author: copilot
+      preconditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM categories WHERE organization_id = 1 AND name = 'Joogid'
+      changes:
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: organization_id
+                  value: "1"
+              - column:
+                  name: name
+                  value: Joogid
+              - column:
+                  name: dynamic_pricing
+                  valueBoolean: true
+        - insert:
+            tableName: categories
+            columns:
+              - column:
+                  name: organization_id
+                  value: "1"
+              - column:
+                  name: name
+                  value: Snakid
+              - column:
+                  name: dynamic_pricing
+                  valueBoolean: false
+
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 1, c.id, 'Olu 0.33', 'Pudel', 4.00, 3.50, 6.00
+              FROM categories c WHERE c.organization_id = 1 AND c.name = 'Joogid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 1, c.id, 'Vesi', 'Gaseeritud', 2.00, NULL, NULL
+              FROM categories c WHERE c.organization_id = 1 AND c.name = 'Joogid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 1, c.id, 'Kropsud', 'Snakk', 2.50, NULL, NULL
+              FROM categories c WHERE c.organization_id = 1 AND c.name = 'Snakid';
+        - sql:
+            sql: >
+              INSERT INTO products (organization_id, category_id, name, description, base_price, min_price, max_price)
+              SELECT 1, c.id, 'Pahklid', 'Snakk', 2.00, NULL, NULL
+              FROM categories c WHERE c.organization_id = 1 AND c.name = 'Snakid';
+
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 1, p.id, 50 FROM products p WHERE p.organization_id = 1 AND p.name = 'Olu 0.33';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 1, p.id, 100 FROM products p WHERE p.organization_id = 1 AND p.name = 'Vesi';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 1, p.id, 80 FROM products p WHERE p.organization_id = 1 AND p.name = 'Kropsud';
+        - sql:
+            sql: >
+              INSERT INTO inventory (organization_id, product_id, quantity)
+              SELECT 1, p.id, 80 FROM products p WHERE p.organization_id = 1 AND p.name = 'Pahklid';
+
+  - changeSet:
+      id: 016-ensure-default-roles-and-organizations
+      author: copilot
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: true
+            stripComments: true
+            sql: >
+              INSERT INTO roles (name)
+              SELECT 'USER'
+              WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'USER');
+
+              INSERT INTO roles (name)
+              SELECT 'ADMIN'
+              WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'ADMIN');
+
+              INSERT INTO organizations (id, name)
+              SELECT 1, 'Default Organization'
+              WHERE NOT EXISTS (SELECT 1 FROM organizations WHERE id = 1);
+
+              INSERT INTO organizations (id, name)
+              SELECT 2, 'TalTech ITUK'
+              WHERE NOT EXISTS (SELECT 1 FROM organizations WHERE id = 2);
+
+              INSERT INTO organizations (id, name)
+              SELECT 3, 'University of Tartu'
+              WHERE NOT EXISTS (SELECT 1 FROM organizations WHERE id = 3);
+
+              SELECT setval(
+                pg_get_serial_sequence('organizations', 'id'),
+                (SELECT GREATEST(COALESCE(MAX(id), 0), 3) FROM organizations)
+              );
