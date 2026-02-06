@@ -63,7 +63,9 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            set -e
+            set -euo pipefail
+
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USER }}" --password-stdin
             TAG="${{ steps.tag.outputs.tag }}"
             COMPOSE_DIR="${{ secrets.DEPLOY_COMPOSE_DIR }}"
 
@@ -76,8 +78,6 @@ jobs:
             else
               echo "IMAGE_TAG=${TAG}" >> .env
             fi
-
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USER }}" --password-stdin
 
             docker compose pull
             docker compose up -d
